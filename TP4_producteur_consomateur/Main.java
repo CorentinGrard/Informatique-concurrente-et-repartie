@@ -1,8 +1,8 @@
 package TP4_producteur_consomateur;
 
-public class Main{
+public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         String message = "Coucou";
 
         Moniteur m = new Moniteur(5);
@@ -10,6 +10,6 @@ public class Main{
         Producteur p = new Producteur(m, message);
         r.start();
         p.start();
+        r.join();
     }
-
 }

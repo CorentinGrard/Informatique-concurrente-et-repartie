@@ -13,7 +13,7 @@ public class Producteur extends Thread {
   public void run() {
     char[] chars = message.toCharArray();
     for (char ch : chars) {
-			m.append(ch);
-		}
+      m.placer(new Character(ch));
+    }
   }
 }

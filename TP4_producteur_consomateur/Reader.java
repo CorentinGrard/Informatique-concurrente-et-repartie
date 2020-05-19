@@ -11,8 +11,9 @@ public class Reader extends Thread {
   public void run() {
     char c;
     do {
-      c = m.take();
+      c = m.retirer();
       System.out.print(c);
-    } while(c != '\0');
+    } while (c != '\0');
+    System.out.println("Fini");
   }
 }
