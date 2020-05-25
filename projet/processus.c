@@ -45,13 +45,13 @@ void *serveur(void *pt)
     adresseDuServeur.sin_port = htons(port);
     adresseDuServeur.sin_addr.s_addr = INADDR_ANY;
 
-    int socketServeur = socket(PF_INET, SOCK_STREAM, 0);
+    int socketServeur = socket(AF_INET, SOCK_STREAM, 0);
     if (socketServeur < 0)
     {
-        perror("Serveur socket :");
+        perror("Serveur : socket");
         exit(1);
     }
-    printf("Serveur socket crée\n");
+    printf("Serveur : socket crée\n");
     if (bind(socketServeur, (struct sockaddr *)&adresseDuServeur, sizeof(struct sockaddr_in)) < 0)
     {
         perror("Serveur bind");
@@ -68,13 +68,13 @@ void *serveur(void *pt)
     {
         struct sockaddr_in adresseDuClient;
         unsigned int longueurDeAdresseDuClient;
-        printf("Socket en attente\n");
+        printf("Serveur : Socket en attente\n");
         int socket = accept(socketServeur, (struct sockaddr *)&adresseDuClient, &longueurDeAdresseDuClient);
 
         // Reception taille
-        char bufferSize[4];
+        char bufferSize[8];
         recv(socket, bufferSize, sizeof(bufferSize), 0);
-        int nbOctets = atoi(bufferSize);
+        int nbOctets = (size_t)*bufferSize;
         write(pipeReception, bufferSize, sizeof(bufferSize));
 
         // Reception message
@@ -97,25 +97,25 @@ void *calcul(void *pt)
     while (1)
     {
         // get buffersize
-        char bufferSize[4];
+        char bufferSize[8];
         read(fdreception, bufferSize, sizeof(bufferSize));
 
         // get msg
-        unsigned int tailleMessage = atoi(bufferSize);
+        size_t tailleMessage = (size_t)*bufferSize;
         char msg[tailleMessage];
-        read(fdreception, &msg, sizeof(char) * tailleMessage);
+        read(fdreception, msg, sizeof(msg));
 
         // define response
-        int tailleFull = 17 + strlen(msg);
+        size_t tailleFull = 17 + strlen(msg) + 1;
         char toConcat[] = "Message reçu : ";
         char response[tailleFull];
         strcat(response, toConcat);
         strcat(response, msg);
 
+        printf("Calcul : %s\n", response);
+
         // add buffersize
-        char sizeResponse[4];
-        snprintf(sizeResponse, sizeof(sizeResponse), "%zu", strlen(response));
-        write(fdenvoi, &sizeResponse, sizeof(sizeResponse));
+        write(fdenvoi, &tailleFull, sizeof(tailleFull));
 
         // add msg
         write(fdenvoi, &response, sizeof(response));
@@ -139,48 +139,51 @@ void *client(void *pt)
     adr.sin_addr.s_addr = inet_addr(args->host);
     /* Affichage des informations de connexion */
     /*******************************************/
-    printf("Connexion vers la machine ");
+    printf("Client : Connexion vers la machine ");
     unsigned char *adrIP = (unsigned char *)&(adr.sin_addr.s_addr);
     printf("%d.", *(adrIP));
     printf("%d.", *(adrIP + 1));
     printf("%d.", *(adrIP + 2));
     printf("%d", *(adrIP + 3));
     printf(" sur le port %u \n", args->port);
-    /* Creation de la socket */
-    /*************************/
-    int descripteurDeSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (descripteurDeSocket < 0)
+
+    while (1)
     {
-        printf("Problemes pour creer la socket");
-        exit(1);
+        /* Creation de la socket */
+        /*************************/
+        int descripteurDeSocket = socket(AF_INET, SOCK_STREAM, 0);
+        if (descripteurDeSocket < 0)
+        {
+            printf("Problemes pour creer la socket");
+            exit(1);
+        }
+        printf("Client : Socket crée\n");
+
+        /* Envoi la taille grâce à send */
+        /*********************************/
+        char bufferTaille[8];
+        read(args->pipeEnvoi, bufferTaille, sizeof(bufferTaille));
+
+        if (connect(descripteurDeSocket, (struct sockaddr *)&adr, sizeof(adr)) < 0)
+        {
+            printf("Client : Problemes pour se connecter au serveur\n");
+            exit(1);
+        }
+        printf("Client : socket connectee\n");
+
+        send(descripteurDeSocket, bufferTaille, sizeof(bufferTaille), 0);
+
+        /* Envoi le msg grâce à send */
+        /*********************************/
+        size_t taille = (size_t)*bufferTaille;
+        char bufferMsg[taille];
+        read(args->pipeEnvoi, bufferMsg, sizeof(bufferMsg));
+
+        send(descripteurDeSocket, &bufferMsg, sizeof(bufferMsg), 0);
+
+        printf("Envoie du message \"%s\" de taille %ld\n", bufferMsg, taille);
+        close(descripteurDeSocket);
     }
-    printf("socket cree\n");
-    /* Connexion de la socket au serveur */
-    /*************************************/
-    if (connect(descripteurDeSocket,
-                (struct sockaddr *)&adr,
-                sizeof(adr)) < 0)
-    {
-        printf("Problemes pour se connecter au serveur");
-        exit(1);
-    }
-    printf("socket connectee\n");
-    /* Envoi la taille grâce à send */
-    /*********************************/
-    char bufferTaille;
-    read(args->pipeEnvoi, &bufferTaille, sizeof(char));
-
-    send(descripteurDeSocket, &bufferTaille, sizeof(char), 0);
-
-    /* Envoi la reponse grâce à send */
-    /*********************************/
-    int taille = atoi(&bufferTaille);
-    char bufferMsg[taille];
-    read(args->pipeEnvoi, &bufferTaille, sizeof(char) * taille);
-
-    send(descripteurDeSocket, &bufferMsg, sizeof(char) * taille, 0);
-
-    close(descripteurDeSocket);
 }
 
 int main(int argc, char **argv)
@@ -210,7 +213,9 @@ int main(int argc, char **argv)
 
     if (isFirst)
     {
-        char message[] = "pipe en bois🤠";
+        char message[] = "pipe en bois";
+        size_t taille = strlen(message) + 1;
+        write(descripteurEnvoi[1], &taille, sizeof(taille));
         write(descripteurEnvoi[1], message, sizeof(message));
     }
 
@@ -220,7 +225,7 @@ int main(int argc, char **argv)
     serveurArgs->pipeReception = descripteurReception[1];
 
     ClientArgs *clientArgs = (ClientArgs *)malloc(sizeof(ClientArgs));
-    clientArgs->host = "localhost";
+    clientArgs->host = "127.0.0.1";
     clientArgs->pipeEnvoi = descripteurEnvoi[0];
     clientArgs->port = portClient;
 
@@ -233,11 +238,11 @@ int main(int argc, char **argv)
     {
         perror("Unable to create the server thread");
     }
-    if (pthread_create(&threadClient, NULL, (void *(*)())client, NULL) == -1)
+    if (pthread_create(&threadClient, NULL, (void *(*)())client, clientArgs) == -1)
     {
         perror("Unable to create the client thread");
     }
-    if (pthread_create(&threadCalcul, NULL, (void *(*)())calcul, NULL) == -1)
+    if (pthread_create(&threadCalcul, NULL, (void *(*)())calcul, calculArgs) == -1)
     {
         perror("Unable to create the calcul thread");
     }
