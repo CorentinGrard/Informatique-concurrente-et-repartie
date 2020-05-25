@@ -113,6 +113,8 @@ int main (int argc, char** argv)
           }
    }
    while ( !fin );
+   
+  close(sockfd);
 
   return 0;
  }

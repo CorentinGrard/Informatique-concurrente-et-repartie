@@ -143,6 +143,7 @@ int main (int argc, char** argv)
            printf ("serveur (PID=%d) : Connexion detectee...\n", getpid());
     
            int indice = -1;
+           
            /*
            do 
             {
@@ -189,6 +190,8 @@ int main (int argc, char** argv)
           }
    }
    while ( !fin );
+
+  close(sockfd);
    
   sem_destroy (&semaphore);
 
