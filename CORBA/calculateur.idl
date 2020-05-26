@@ -1,0 +1,10 @@
+struct resultat 
+ {
+  short valeur;
+  short codeErreur;
+ };  
+
+interface Additionneur 
+ {
+  resultat additionner (in short op1, in short op2);
+ };
