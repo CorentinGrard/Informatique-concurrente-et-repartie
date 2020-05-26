@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include "trace_client.c"
+#include "trace_client.h"
 
 typedef struct
 {
@@ -33,12 +33,13 @@ typedef struct
 {
     int pipeReception;
     int pipeEnvoi;
-    int pipeTrace
+    int pipeTrace;
 } CalculArgs;
 
 typedef struct
 {
-    int pipeTrace
+    int pipeTrace;
+    pid_t pid;
 } TraceArgs;
 
 void *serveur(void *pt)
@@ -207,7 +208,7 @@ void *trace(void *pt)
     size_t taille = (size_t)*bufferTaille;
     char bufferMsg[taille];
     read(fdTrace, bufferMsg, sizeof(bufferMsg));
-    trace(bufferMsg);
+    send_rpc_msg(bufferMsg, args->pid);
 }
 
 int main(int argc, char **argv)
@@ -263,6 +264,7 @@ int main(int argc, char **argv)
 
     TraceArgs *traceArgs = (TraceArgs *)malloc(sizeof(TraceArgs));
     traceArgs->pipeTrace = descripteurTrace[0];
+    traceArgs->pid = getpid();
 
     // Creation des threads
     if (pthread_create(&threadServeur, NULL, (void *(*)())serveur, serveurArgs) == -1)

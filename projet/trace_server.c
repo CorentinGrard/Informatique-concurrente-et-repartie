@@ -5,15 +5,17 @@
  */
 
 #include "trace.h"
+#include <time.h>
 
 reponse *
 trace_1_svc(data *args, struct svc_req *rqstp)
 {
 	static reponse result;
 	FILE *log = fopen("trace.log", "a");
-	if(log < 0){
+	if(log < 0) {
 		perror("Error file opening");
-		return -1;
+		result.errno = -1;
+		return &result;
 	}
 	fprintf(log, "%lu : %s\n",(unsigned long)time(NULL), args->message);
 	printf("%lu : %s\n",(unsigned long)time(NULL), args->message);

@@ -4,14 +4,15 @@
  * as a guideline for developing your own functions.
  */
 
-#include "trace.h"
+#include "trace_client.h"
 
-void trace(char* msg)
+void send_rpc_msg(char[] msg, pid_t pid)
 {
 	CLIENT *clnt;
 	reponse *result;
 	data arguments;
 	arguments.message = msg;
+	arguments.pid = pid;
 
 #ifndef DEBUG
 	clnt = clnt_create("127.0.0.1", CALCUL, VERSION_UN, "udp");

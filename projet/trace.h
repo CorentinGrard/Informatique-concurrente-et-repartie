@@ -16,7 +16,7 @@ extern "C" {
 
 struct data {
 	char *message;
-	pid_t pid;
+	int pid;
 };
 typedef struct data data;
 
