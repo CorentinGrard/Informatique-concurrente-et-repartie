@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include "trace_client.c"
 
 typedef struct
 {
@@ -32,7 +33,13 @@ typedef struct
 {
     int pipeReception;
     int pipeEnvoi;
+    int pipeTrace
 } CalculArgs;
+
+typedef struct
+{
+    int pipeTrace
+} TraceArgs;
 
 void *serveur(void *pt)
 {
@@ -93,6 +100,7 @@ void *calcul(void *pt)
     CalculArgs *myArgs = (CalculArgs *)pt;
     int fdreception = myArgs->pipeReception;
     int fdenvoi = myArgs->pipeEnvoi;
+    int fdrpc = myArgs->pipeTrace;
 
     while (1)
     {
@@ -114,11 +122,15 @@ void *calcul(void *pt)
 
         printf("Calcul : %s\n", response);
 
-        // add buffersize
+        // add buffersize envoie
         write(fdenvoi, &tailleFull, sizeof(tailleFull));
-
-        // add msg
+        // add msg envoie
         write(fdenvoi, &response, sizeof(response));
+
+        // add buffersize rpc
+        write(fdrpc, &tailleFull, sizeof(tailleFull));
+        //add msg rpc
+        write(fdrpc, &response, sizeof(response));
     }
     close(fdreception);
     close(fdenvoi);
@@ -186,6 +198,18 @@ void *client(void *pt)
     }
 }
 
+void *trace(void *pt)
+{
+    TraceArgs *args = (TraceArgs *)pt;
+    int fdTrace = args->pipeTrace;
+    char bufferTaille[8];
+    read(fdTrace ,bufferTaille, sizeof(bufferTaille));
+    size_t taille = (size_t)*bufferTaille;
+    char bufferMsg[taille];
+    read(fdTrace, bufferMsg, sizeof(bufferMsg));
+    trace(bufferMsg);
+}
+
 int main(int argc, char **argv)
 {
     // Arguments
@@ -202,14 +226,17 @@ int main(int argc, char **argv)
     pthread_t threadServeur;
     pthread_t threadClient;
     pthread_t threadCalcul;
+    pthread_t threadTrace;
 
     // Descripteurs pipes
     int *descripteurReception = malloc(sizeof(int) * 2);
     int *descripteurEnvoi = malloc(sizeof(int) * 2);
+    int *descripteurTrace = malloc(sizeof(int) * 2);
 
     // Pipes
     pipe(descripteurReception);
     pipe(descripteurEnvoi);
+    pipe(descripteurTrace);
 
     if (isFirst)
     {
@@ -232,6 +259,10 @@ int main(int argc, char **argv)
     CalculArgs *calculArgs = (CalculArgs *)malloc(sizeof(CalculArgs));
     calculArgs->pipeEnvoi = descripteurEnvoi[1];
     calculArgs->pipeReception = descripteurReception[0];
+    calculArgs->pipeTrace = descripteurTrace[1];
+
+    TraceArgs *traceArgs = (TraceArgs *)malloc(sizeof(TraceArgs));
+    traceArgs->pipeTrace = descripteurTrace[0];
 
     // Creation des threads
     if (pthread_create(&threadServeur, NULL, (void *(*)())serveur, serveurArgs) == -1)
@@ -245,6 +276,10 @@ int main(int argc, char **argv)
     if (pthread_create(&threadCalcul, NULL, (void *(*)())calcul, calculArgs) == -1)
     {
         perror("Unable to create the calcul thread");
+    }
+    if (pthread_create(&threadTrace, NULL, (void *(*)())trace, traceArgs) == -1)
+    {
+        perror("Unable to create the trace thread");
     }
 
     // Wait for the end of the threads
