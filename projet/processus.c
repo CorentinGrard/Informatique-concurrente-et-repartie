@@ -59,13 +59,13 @@ void *serveur(void *pt)
         perror("Serveur : socket");
         exit(1);
     }
-    printf("Serveur : socket crée\n");
+    // printf("Serveur : socket crée\n");
     if (bind(socketServeur, (struct sockaddr *)&adresseDuServeur, sizeof(struct sockaddr_in)) < 0)
     {
         perror("Serveur bind");
         exit(1);
     }
-    printf("Serveur bindé\n");
+    // printf("Serveur bindé\n");
 
     if (listen(socketServeur, 1) < 0)
     {
@@ -80,7 +80,7 @@ void *serveur(void *pt)
         int socket = accept(socketServeur, (struct sockaddr *)&adresseDuClient, &longueurDeAdresseDuClient);
 
         // Reception taille
-        char bufferSize[8];
+        size_t bufferSize[1];
         recv(socket, bufferSize, sizeof(bufferSize), 0);
         int nbOctets = (size_t)*bufferSize;
         write(pipeReception, bufferSize, sizeof(bufferSize));
@@ -106,7 +106,7 @@ void *calcul(void *pt)
     while (1)
     {
         // get buffersize
-        char bufferSize[8];
+        size_t bufferSize[1];
         read(fdreception, bufferSize, sizeof(bufferSize));
 
         // get msg
@@ -114,14 +114,21 @@ void *calcul(void *pt)
         char msg[tailleMessage];
         read(fdreception, msg, sizeof(msg));
 
+        printf("Message reçu : %s\n", msg);
+
         // define response
-        size_t tailleFull = 17 + strlen(msg) + 1;
-        char toConcat[] = "Message reçu : ";
+        char message[50];
+        printf("Entrez votre message :\n");
+        fgets(message, 50,stdin);
+        strtok(message, "\n");
+
+        size_t tailleFull = 3 + strlen(msg) + strlen(message) + 1;
+        char toConcat[] = " , ";
         char response[tailleFull];
+        bzero(response, tailleFull);
+        strcat(response, message);
         strcat(response, toConcat);
         strcat(response, msg);
-
-        printf("Calcul : %s\n", response);
 
         // add buffersize envoie
         write(fdenvoi, &tailleFull, sizeof(tailleFull));
@@ -152,13 +159,13 @@ void *client(void *pt)
     adr.sin_addr.s_addr = inet_addr(args->host);
     /* Affichage des informations de connexion */
     /*******************************************/
-    printf("Client : Connexion vers la machine ");
-    unsigned char *adrIP = (unsigned char *)&(adr.sin_addr.s_addr);
-    printf("%d.", *(adrIP));
-    printf("%d.", *(adrIP + 1));
-    printf("%d.", *(adrIP + 2));
-    printf("%d", *(adrIP + 3));
-    printf(" sur le port %u \n", args->port);
+    // printf("Client : Connexion vers la machine ");
+    // unsigned char *adrIP = (unsigned char *)&(adr.sin_addr.s_addr);
+    // printf("%d.", *(adrIP));
+    // printf("%d.", *(adrIP + 1));
+    // printf("%d.", *(adrIP + 2));
+    // printf("%d", *(adrIP + 3));
+    // printf(" sur le port %u \n", args->port);
 
     while (1)
     {
@@ -170,11 +177,11 @@ void *client(void *pt)
             printf("Problemes pour creer la socket");
             exit(1);
         }
-        printf("Client : Socket crée\n");
+        // printf("Client : Socket crée\n");
 
         /* Envoi la taille grâce à send */
         /*********************************/
-        char bufferTaille[8];
+        size_t bufferTaille[1];
         read(args->pipeEnvoi, bufferTaille, sizeof(bufferTaille));
 
         if (connect(descripteurDeSocket, (struct sockaddr *)&adr, sizeof(adr)) < 0)
@@ -182,7 +189,7 @@ void *client(void *pt)
             printf("Client : Problemes pour se connecter au serveur\n");
             exit(1);
         }
-        printf("Client : socket connectee\n");
+        // printf("Client : socket connectee\n");
 
         send(descripteurDeSocket, bufferTaille, sizeof(bufferTaille), 0);
 
@@ -194,7 +201,7 @@ void *client(void *pt)
 
         send(descripteurDeSocket, &bufferMsg, sizeof(bufferMsg), 0);
 
-        printf("Envoie du message \"%s\" de taille %ld\n", bufferMsg, taille);
+        printf("Client : Envoi du message \"%s\" de taille %ld\n", bufferMsg, taille);
         close(descripteurDeSocket);
     }
 }

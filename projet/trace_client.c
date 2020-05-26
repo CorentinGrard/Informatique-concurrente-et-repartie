@@ -6,7 +6,7 @@
 
 #include "trace_client.h"
 
-void send_rpc_msg(char[] msg, pid_t pid)
+void send_rpc_msg(char msg[], pid_t pid)
 {
 	CLIENT *clnt;
 	reponse *result;

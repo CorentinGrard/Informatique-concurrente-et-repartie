@@ -1,2 +1,5 @@
 process*.out
 *.o
+processus
+trace_server
+trace.log

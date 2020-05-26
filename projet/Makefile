@@ -13,14 +13,14 @@ SOURCES_SVC.h =
 SOURCES.x = trace.x
 
 TARGETS_SVC.c = trace_svc.c trace_server.c trace_xdr.c 
-TARGETS_CLNT.c = trace_clnt.c processus.c trace_xdr.c 
+TARGETS_CLNT.c = trace_clnt.c processus.c trace_xdr.c trace_client.c
 TARGETS = trace.h trace_xdr.c trace_clnt.c trace_svc.c trace_client.c trace_server.c
 
 OBJECTS_CLNT = $(SOURCES_CLNT.c:%.c=%.o) $(TARGETS_CLNT.c:%.c=%.o)
 OBJECTS_SVC = $(SOURCES_SVC.c:%.c=%.o) $(TARGETS_SVC.c:%.c=%.o)
 # Compiler flags 
 
-CFLAGS += -g -lpthread
+CFLAGS += -g -pthread
 LDLIBS += -lnsl
 RPCGENFLAGS = 
 
