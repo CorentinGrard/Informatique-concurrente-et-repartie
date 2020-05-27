@@ -6,18 +6,19 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include "myrpc/trace_client.h"
+#include "trace_client.h"
 #include "mytrace.h"
-
+#include "calcul.h"
 
 void *trace(void *pt)
 {
     TraceArgs *args = (TraceArgs *)pt;
     int fdTrace = args->pipeTrace;
-    char bufferTaille[8];
-    read(fdTrace, bufferTaille, sizeof(bufferTaille));
-    size_t taille = (size_t)*bufferTaille;
-    char bufferMsg[taille];
-    read(fdTrace, bufferMsg, sizeof(bufferMsg));
-    send_rpc_msg(bufferMsg, args->pid);
+    int pid = args->pid;
+    while (1)
+    {
+        Trace data[1];
+        read(fdTrace, data, sizeof(data));
+        send_rpc_msg(data->message, data->type ,args->pid);
+    }
 }

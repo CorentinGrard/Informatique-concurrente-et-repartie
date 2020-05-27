@@ -14,6 +14,7 @@
 
 void send_msg(int, int, int);
 void *calcul(void *);
+void mylog(int, int , char*);
 
 typedef struct CalculArgs
 {
@@ -22,6 +23,7 @@ typedef struct CalculArgs
     int pipeTrace;
     int serveursPorts[NOMBRE_DE_SERVERS_MAX];
     int isFirst;
+    pid_t pid;
 } CalculArgs;
 
 typedef struct PipeClient
@@ -46,5 +48,11 @@ typedef struct Item
     pid_t pid;
     int horloge;
 } Item;
+
+typedef struct Trace
+{
+    int type;
+    char *message;
+} Trace;
 
 #endif

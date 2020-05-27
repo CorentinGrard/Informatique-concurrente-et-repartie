@@ -12,6 +12,8 @@ xdr_data (XDR *xdrs, data *objp)
 
 	 if (!xdr_string (xdrs, &objp->message, ~0))
 		 return FALSE;
+	 if (!xdr_int (xdrs, &objp->type))
+		 return FALSE;
 	 if (!xdr_int (xdrs, &objp->pid))
 		 return FALSE;
 	return TRUE;

@@ -15,7 +15,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#include "myrpc/trace_client.h"
+#include "trace_client.h"
 #include "calcul.h"
 #include "client.h"
 #include "serveur.h"
@@ -67,7 +67,9 @@ int mainProcessus(int portsServeurs[], int portSocket, int isFirst)
     calculArgs->pipeEnvoi = descripteurEnvoi[1];
     calculArgs->pipeReception = descripteurReception[0];
     calculArgs->pipeTrace = descripteurTrace[1];
+    memcpy(calculArgs->serveursPorts,portsServeurs,sizeof(int)* NOMBRE_DE_SERVERS_MAX);
     calculArgs->isFirst = isFirst;
+    calculArgs->pid = getpid();
 
     TraceArgs *traceArgs = (TraceArgs *)malloc(sizeof(TraceArgs));
     traceArgs->pipeTrace = descripteurTrace[0];

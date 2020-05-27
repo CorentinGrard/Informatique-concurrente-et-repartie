@@ -17,13 +17,23 @@ void *calcul(void *pt)
     int fdreception = args->pipeReception;
     int fdenvoi = args->pipeEnvoi;
     int fdrpc = args->pipeTrace;
-    int *serveursPorts = args->serveursPorts;
+    int serveursPorts[NOMBRE_DE_SERVERS_MAX];
+    memcpy(serveursPorts, args->serveursPorts, sizeof(int) * NOMBRE_DE_SERVERS_MAX);
     int isFirst = args->isFirst;
+    pid_t pid = args->pid;
 
     int horloge = 0;
     bool wantSC = false;
     int compteurReply = 0;
-    int nbServeurs = sizeof(serveursPorts) / sizeof(serveursPorts[0]);
+    int nbServeurs;
+    for (int i = 0; i < NOMBRE_DE_SERVERS_MAX; i++)
+    {
+        if (serveursPorts[i] == 0)
+        {
+            nbServeurs = i;
+            break;
+        }
+    }
 
     Item queue[1000];
     int queueIndex = 0;
@@ -40,10 +50,13 @@ void *calcul(void *pt)
         if (wantSC && data->type == 2)
         {
             compteurReply++;
+            mylog(fdrpc, 2, "REPLY");
             if (compteurReply == nbServeurs)
             {
                 // Section critique
                 printf("Section Critique !\n");
+                mylog(fdrpc, 4, "SECTION CRITIQUE");
+
                 // Envoi RELEASE
                 for (int i = 0; i < nbServeurs; i++)
                 {
@@ -52,7 +65,6 @@ void *calcul(void *pt)
                     toSend->type = 3;
 
                     write(fdenvoi, toSend, sizeof(toSend));
-                    // write(fdrpc, toSend, sizeof(toSend));
                 }
                 // Reset
                 compteurReply = 0;
@@ -95,14 +107,9 @@ void *calcul(void *pt)
         else if (data->type == 0)
         {
             // Display message
-            char* message = data->message;
+            char *message = data->message;
             printf("Message : %s\n", message);
-
-            // RPC
-            PipeClient toSend[1];
-            toSend->message = data->message;
-
-            write(fdrpc, toSend, sizeof(toSend));
+            mylog(fdrpc, data->type, data->message);
         }
 
         // Execute action
@@ -113,7 +120,7 @@ void *calcul(void *pt)
             // Action Locale
             horloge++;
             printf("Action Locale\n");
-            // TODO RPC
+            mylog(fdrpc, 5, "ACTION LOCALE");
             break;
         case 1:
             // Envoi message
@@ -125,10 +132,9 @@ void *calcul(void *pt)
 
             // Get Message from user
             char message[50];
-            printf("Entrez votre message :\n");
+            printf("%d Entrez votre message :\n", pid);
             fgets(message, 50, stdin);
             strtok(message, "\n");
-            size_t taille = strlen(message) + 1;
 
             // Prepare message to send
             PipeClient toSend[1];
@@ -139,9 +145,6 @@ void *calcul(void *pt)
 
             // write to pipeClient
             write(fdenvoi, toSend, sizeof(toSend));
-
-            // TODO RPC
-            write(fdrpc, toSend, sizeof(toSend));
             break;
         case 2:
             // Veux SC
@@ -154,11 +157,10 @@ void *calcul(void *pt)
                 toSend->port = port;
                 toSend->type = 1;
                 toSend->horloge = horloge;
-                toSend->pid = getpid();
+                toSend->pid = pid;
 
                 write(fdenvoi, toSend, sizeof(toSend));
-                // TODO RPC
-                write(fdrpc, toSend, sizeof(toSend));
+                mylog(fdrpc, toSend->type, "REQUEST");
             }
             break;
         default:
@@ -168,4 +170,12 @@ void *calcul(void *pt)
     }
     close(fdreception);
     close(fdenvoi);
+}
+
+void mylog(int fdrpc, int type, char *message)
+{
+    Trace toSendTrace[1];
+    toSendTrace->type = type;
+    toSendTrace->message = message;
+    write(fdrpc, toSendTrace, sizeof(toSendTrace));
 }

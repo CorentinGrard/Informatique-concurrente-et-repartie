@@ -25,7 +25,7 @@ void *client(void *pt)
         PipeClient dataClient[1];
         read(args->pipeEnvoi, dataClient, sizeof(dataClient));
 
-        adr.sin_port = htons(dataClient->port);
+        adr.sin_port = htons(dataClient->port) ;
 
         /* Creation de la socket */
         /*************************/
@@ -43,7 +43,7 @@ void *client(void *pt)
             printf("Client : Problemes pour se connecter au serveur\n");
             exit(1);
         }
-        PipeClient toSend[1];
+        DataSocket toSend[1];
         toSend->type = dataClient->type;
         switch (dataClient->type)
         {

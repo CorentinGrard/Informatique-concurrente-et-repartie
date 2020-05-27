@@ -42,19 +42,32 @@ void *serveur(void *pt)
         struct sockaddr_in adresseDuClient;
         unsigned int longueurDeAdresseDuClient;
         int socket = accept(socketServeur, (struct sockaddr *)&adresseDuClient, &longueurDeAdresseDuClient);
-
-        // Reception taille
-        DataSocket data[1];
-        if (recv(socket, data, sizeof(data), 0) < 0)
-        {
-            perror("Serveur : Error read Socket");
-        }
-        if (write(pipeReception, data, sizeof(data)) < 0)
-        {
-            perror("Serveur : Error write pipe");
-        }
-
-        close(socket);
+    
+        ServerWorkerArgs *serverWorkerArgs= (ServerWorkerArgs *)malloc(sizeof(ServerWorkerArgs));
+        serverWorkerArgs->pipeReception = pipeReception;
+        serverWorkerArgs->socketClient = socket;
+        pthread_t threadForClients;
+        if (pthread_create(&threadForClients, NULL, (void *(*)())serverWorker, serverWorkerArgs) != 0)
+            printf("Failed to create thread\n");
     }
     close(socketServeur);
 }
+
+void *serverWorker(void *pt)
+{
+    ServerWorkerArgs *args = (ServerWorkerArgs *)pt;
+    
+    // Reception taille
+    DataSocket data[1];
+    if (recv(args->socketClient, data, sizeof(data), 0) < 0)
+    {
+        perror("Serveur : Error read Socket");
+    }
+    if (write(args->pipeReception, data, sizeof(data)) < 0)
+    {
+        perror("Serveur : Error write pipe");
+    }
+
+    close(args->socketClient);
+}
+

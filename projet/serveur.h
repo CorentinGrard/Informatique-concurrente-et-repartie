@@ -12,13 +12,18 @@
 #include "calcul.h"
 
 void *serveur(void*);
-
-
+void *serverWorker(void*);
 
 typedef struct ServeurArgs
 {
     int pipeReception;
     int port;
 } ServeurArgs;
+
+typedef struct ServerWorkerArgs
+{
+    int pipeReception;
+    int socketClient;
+} ServerWorkerArgs;
 
 #endif

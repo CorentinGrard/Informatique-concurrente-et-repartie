@@ -20,8 +20,8 @@ trace_1_svc(data *args, struct svc_req *rqstp)
 	}
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
-	fprintf(log, "%d-%02d-%02d %02d:%02d:%02d		%d		\"%s\"\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, args->pid, args->message);
-	printf("%d-%02d-%02d %02d:%02d:%02d		%d		\"%s\"\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, args->pid, args->message);
+	fprintf(log, "%d-%02d-%02d %02d:%02d:%02d		%d		%d		\"%s\"\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, args->pid, args->type, args->message);
+	printf("%d-%02d-%02d %02d:%02d:%02d		%d		%d		\"%s\"\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, args->pid, args->type, args->message);
 	fclose(log);
 	result.errno = 0;
 	return &result;

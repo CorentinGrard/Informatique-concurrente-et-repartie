@@ -6,4 +6,4 @@
 
 #include "trace.h"
 
-void send_rpc_msg(char [], pid_t);
+void send_rpc_msg(char[], int, pid_t);

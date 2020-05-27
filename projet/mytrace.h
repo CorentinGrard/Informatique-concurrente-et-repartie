@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include "myrpc/trace_client.h"
+#include "trace_client.h"
 
 void *trace(void *);
 

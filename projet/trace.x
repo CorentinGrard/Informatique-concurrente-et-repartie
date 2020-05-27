@@ -1,6 +1,7 @@
 struct data
 {
     string message <>;
+    int type;
     int pid;
 };
 typedef struct data data;

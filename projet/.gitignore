@@ -1,6 +1,6 @@
 process*.out
 *.o
-myrpc/*.o
-processus
+*.o
+main
 trace_server
 trace.log
