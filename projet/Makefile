@@ -10,11 +10,11 @@ SOURCES_CLNT.c =
 SOURCES_CLNT.h = 
 SOURCES_SVC.c = 
 SOURCES_SVC.h = 
-SOURCES.x = trace.x
+SOURCES.x = myrpc/trace.x
 
-TARGETS_SVC.c = trace_svc.c trace_server.c trace_xdr.c 
-TARGETS_CLNT.c = trace_clnt.c processus.c trace_xdr.c trace_client.c
-TARGETS = trace.h trace_xdr.c trace_clnt.c trace_svc.c trace_client.c trace_server.c
+TARGETS_SVC.c = myrpc/trace_svc.c myrpc/trace_server.c myrpc/trace_xdr.c 
+TARGETS_CLNT.c = myrpc/trace_clnt.c processus.c myrpc/trace_xdr.c myrpc/trace_client.c serveur.c client.c calcul.c  mytrace.c
+TARGETS = myrpc/trace.h myrpc/trace_xdr.c myrpc/trace_clnt.c myrpc/trace_svc.c myrpc/trace_client.c myrpc/trace_server.c
 
 OBJECTS_CLNT = $(SOURCES_CLNT.c:%.c=%.o) $(TARGETS_CLNT.c:%.c=%.o)
 OBJECTS_SVC = $(SOURCES_SVC.c:%.c=%.o) $(TARGETS_SVC.c:%.c=%.o)

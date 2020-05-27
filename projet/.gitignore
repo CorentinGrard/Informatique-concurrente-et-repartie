@@ -1,5 +1,6 @@
 process*.out
 *.o
+myrpc/*.o
 processus
 trace_server
 trace.log
