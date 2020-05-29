@@ -22,7 +22,7 @@ void *serveur(void *pt)
     int socketServeur = socket(AF_INET, SOCK_STREAM, 0);
     if (socketServeur < 0)
     {
-        perror("Serveur : socket");
+        perror("Serveur socket");
         exit(1);
     }
 

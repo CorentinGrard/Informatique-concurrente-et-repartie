@@ -21,6 +21,7 @@ void *calcul(void *pt)
     memcpy(serveursPorts, args->serveursPorts, sizeof(int) * NOMBRE_DE_SERVERS_MAX);
     int isFirst = args->isFirst;
     pid_t pid = args->pid;
+    int port = args->port;
 
     int horloge = 0;
     bool wantSC = false;
@@ -79,6 +80,7 @@ void *calcul(void *pt)
             {
                 queue[i] = queue[i + 1];
             }
+            mylog(fdrpc, 3, "RELEASE");
             queueIndex--;
         }
         // IF TYPE == REQUEST
@@ -88,10 +90,10 @@ void *calcul(void *pt)
             Item request;
             request.horloge = data->horloge;
             request.pid = data->pid;
-            for (int i = 0; i < queueIndex; i++)
+            for (int i = 0; i < queueIndex + 1; i++)
             {
                 // Sort by horloge
-                if (request.horloge <= queue[i].horloge)
+                if (request.horloge <= queue[i].horloge || queue[i].horloge == 0)
                 {
                     queueIndex++;
                     for (int j = queueIndex; j > i + 1; j--)
@@ -99,6 +101,11 @@ void *calcul(void *pt)
                         queue[j] = queue[j - 1];
                     }
                     queue[i] = request;
+                    // Send the reply
+                    PipeClient toSend[1];
+                    toSend->type = 2;
+                    toSend->port = data->RequestPort;
+                    write(fdenvoi, toSend, sizeof(toSend));
                     break;
                 }
             }
@@ -128,7 +135,7 @@ void *calcul(void *pt)
 
             // Pick serveur
             int portIndex = rand() % nbServeurs;
-            int port = serveursPorts[portIndex];
+            int portPick = serveursPorts[portIndex];
 
             // Get Message from user
             char message[50];
@@ -138,29 +145,33 @@ void *calcul(void *pt)
 
             // Prepare message to send
             PipeClient toSend[1];
-            toSend->port = port;
+            toSend->port = portPick;
             toSend->type = 0;
 
-            toSend->message = message;
+            strcpy(toSend->message, message);
 
             // write to pipeClient
             write(fdenvoi, toSend, sizeof(toSend));
             break;
         case 2:
-            // Veux SC
-            horloge++;
-            wantSC = true;
-            for (int i = 0; i < nbServeurs; i++)
+            if (!wantSC)
             {
-                int port = serveursPorts[i];
-                PipeClient toSend[1];
-                toSend->port = port;
-                toSend->type = 1;
-                toSend->horloge = horloge;
-                toSend->pid = pid;
+                // Veux SC
+                horloge++;
+                wantSC = true;
+                for (int i = 0; i < nbServeurs; i++)
+                {
+                    int port = serveursPorts[i];
+                    PipeClient toSend[1];
+                    toSend->port = port;
+                    toSend->type = 1;
+                    toSend->horloge = horloge;
+                    toSend->pid = pid;
+                    toSend->RequestPort = port;
 
-                write(fdenvoi, toSend, sizeof(toSend));
-                mylog(fdrpc, toSend->type, "REQUEST");
+                    write(fdenvoi, toSend, sizeof(toSend));
+                    mylog(fdrpc, toSend->type, "REQUEST");
+                }
             }
             break;
         default:
@@ -176,6 +187,6 @@ void mylog(int fdrpc, int type, char *message)
 {
     Trace toSendTrace[1];
     toSendTrace->type = type;
-    toSendTrace->message = message;
+    strcpy(toSendTrace->message, message);
     write(fdrpc, toSendTrace, sizeof(toSendTrace));
 }

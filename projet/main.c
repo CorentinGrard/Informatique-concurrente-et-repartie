@@ -28,8 +28,15 @@ void ctrlc_handler(int signum, siginfo_t *info, void *pasUtileIci)
     exit(0);
 }
 
-int mainProcessus(int portsServeurs[], int portSocket, int isFirst)
+int main(int argc, char **argv)
 {
+    int portsServeurs[10] = {0};
+    portsServeurs[0]=2000;
+    portsServeurs[1]=3000;
+    
+    int portSocket = atoi(argv[1]);
+    int isFirst = atoi(argv[2]);
+    
     // Thread
     pthread_t threadServeur;
     pthread_t threadClient;
@@ -50,7 +57,7 @@ int mainProcessus(int portsServeurs[], int portSocket, int isFirst)
     {
         DataSocket dataInit[1];
         dataInit->type = 0;
-        dataInit->message = "Message d'initialisation";
+        strcpy(dataInit->message,"Message d'initialisation");
         write(descripteurReception[1], dataInit, sizeof(dataInit));
     }
 
@@ -67,6 +74,7 @@ int mainProcessus(int portsServeurs[], int portSocket, int isFirst)
     calculArgs->pipeEnvoi = descripteurEnvoi[1];
     calculArgs->pipeReception = descripteurReception[0];
     calculArgs->pipeTrace = descripteurTrace[1];
+    calculArgs->port = portSocket;
     memcpy(calculArgs->serveursPorts,portsServeurs,sizeof(int)* NOMBRE_DE_SERVERS_MAX);
     calculArgs->isFirst = isFirst;
     calculArgs->pid = getpid();
@@ -101,55 +109,55 @@ int mainProcessus(int portsServeurs[], int portSocket, int isFirst)
     return 0;
 }
 
-int main(int argc, char **argv)
-{
-    // Signals pour CTRL + C
-    struct sigaction prepaSignal;
-    prepaSignal.sa_sigaction = ctrlc_handler;
-    prepaSignal.sa_flags = SA_SIGINFO;
-    if (sigaction(SIGINT, &prepaSignal, NULL))
-    {
-        perror("Error sigaction ");
-    }
+// int main(int argc, char **argv)
+// {
+//     // Signals pour CTRL + C
+//     struct sigaction prepaSignal;
+//     prepaSignal.sa_sigaction = ctrlc_handler;
+//     prepaSignal.sa_flags = SA_SIGINFO;
+//     if (sigaction(SIGINT, &prepaSignal, NULL))
+//     {
+//         perror("Error sigaction ");
+//     }
 
-    // Read serveurs.conf
-    FILE *fdConf = fopen("serveurs.conf", "r");
-    if (fdConf == NULL)
-    {
-        perror("Error opening conf file");
-        return -1;
-    }
-    char port[2048];
-    char delim[] = ",";
-    char *nbRead = fgets(port, 2048, fdConf);
-    int nbPort = strlen(port) / 5;
-    char *ptr = strtok(port, delim);
+//     // Read serveurs.conf
+//     FILE *fdConf = fopen("serveurs.conf", "r");
+//     if (fdConf == NULL)
+//     {
+//         perror("Error opening conf file");
+//         return -1;
+//     }
+//     char port[2048];
+//     char delim[] = ",";
+//     char *nbRead = fgets(port, 2048, fdConf);
+//     int nbPort = strlen(port) / 5;
+//     char *ptr = strtok(port, delim);
 
-    int *client_list = malloc(sizeof(int) * NOMBRE_DE_SERVERS_MAX);
-    int i = 0;
-    while (ptr != NULL)
-    {
-        client_list[i] = atoi(ptr);
-        ptr = strtok(NULL, delim);
-        ++i;
-    }
-    int isFirst = 1;
-    for (int j = 0; j < (i - 1); ++j)
-    {
-        int test = client_list[j];
-        pid_t pid = fork();
-        if (pid < 0)
-        {
-            perror("Error fork");
-            exit(-1);
-        }
-        else if (pid == 0)
-        {
-            mainProcessus(client_list, client_list[j], isFirst);
-            break;
-        }
-        isFirst = 0;
-    }
-    sleep(300);
-    return 0;
-}
+//     int *client_list = malloc(sizeof(int) * NOMBRE_DE_SERVERS_MAX);
+//     int i = 0;
+//     while (ptr != NULL)
+//     {
+//         client_list[i] = atoi(ptr);
+//         ptr = strtok(NULL, delim);
+//         ++i;
+//     }
+//     int isFirst = 1;
+//     for (int j = 0; j < (i - 1); ++j)
+//     {
+//         int test = client_list[j];
+//         pid_t pid = fork();
+//         if (pid < 0)
+//         {
+//             perror("Error fork");
+//             exit(-1);
+//         }
+//         else if (pid == 0)
+//         {
+//             mainProcessus(client_list, client_list[j], isFirst);
+//             break;
+//         }
+//         isFirst = 0;
+//     }
+//     sleep(300);
+//     return 0;
+// }

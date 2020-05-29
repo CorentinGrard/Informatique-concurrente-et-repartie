@@ -25,7 +25,7 @@ void *client(void *pt)
         PipeClient dataClient[1];
         read(args->pipeEnvoi, dataClient, sizeof(dataClient));
 
-        adr.sin_port = htons(dataClient->port) ;
+        adr.sin_port = htons(dataClient->port);
 
         /* Creation de la socket */
         /*************************/
@@ -48,11 +48,15 @@ void *client(void *pt)
         switch (dataClient->type)
         {
         case 0: //Message
-            toSend->message = dataClient->message;
+        {
+            strcpy(toSend->message, dataClient->message);
             break;
+        }
+
         case 1: //Request
             toSend->pid = dataClient->pid;
             toSend->horloge = dataClient->horloge;
+            toSend->RequestPort = dataClient->RequestPort;
             break;
         }
         send(descripteurDeSocket, toSend, sizeof(toSend), 0);
