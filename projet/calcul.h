@@ -11,11 +11,12 @@
 #include <stdlib.h>
 
 #define NOMBRE_DE_SERVERS_MAX 10
-#define TAILLE_MESSAGE_MAX 10000
+#define TAILLE_MESSAGE_MAX 30
 
 void send_msg(int, int, int);
 void *calcul(void *);
 void mylog(int, int , char*);
+char *randstring();
 
 typedef struct CalculArgs
 {

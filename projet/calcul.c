@@ -51,7 +51,7 @@ void *calcul(void *pt)
         if (wantSC && data->type == 2)
         {
             compteurReply++;
-            mylog(fdrpc, 2, "REPLY");
+            mylog(fdrpc, 2, "RECEIVE REPLY");
             if (compteurReply == nbServeurs)
             {
                 // Section critique
@@ -66,6 +66,7 @@ void *calcul(void *pt)
                     toSend->type = 3;
 
                     write(fdenvoi, toSend, sizeof(toSend));
+                    mylog(fdrpc, 3, "SEND RELEASE");
                 }
                 // Reset
                 compteurReply = 0;
@@ -80,7 +81,7 @@ void *calcul(void *pt)
             {
                 queue[i] = queue[i + 1];
             }
-            mylog(fdrpc, 3, "RELEASE");
+            mylog(fdrpc, 3, "RECEIVE RELEASE");
             queueIndex--;
         }
         // IF TYPE == REQUEST
@@ -101,11 +102,13 @@ void *calcul(void *pt)
                         queue[j] = queue[j - 1];
                     }
                     queue[i] = request;
+                    mylog(fdrpc, 1, "RECEIVE REQUEST");
                     // Send the reply
                     PipeClient toSend[1];
                     toSend->type = 2;
                     toSend->port = data->RequestPort;
                     write(fdenvoi, toSend, sizeof(toSend));
+                    mylog(fdrpc, 2, "SEND REPLY");
                     break;
                 }
             }
@@ -137,19 +140,13 @@ void *calcul(void *pt)
             int portIndex = rand() % nbServeurs;
             int portPick = serveursPorts[portIndex];
 
-            // Get Message from user
-            char message[50];
-            printf("%d Entrez votre message :\n", pid);
-            fgets(message, 50, stdin);
-            strtok(message, "\n");
-
             // Prepare message to send
             PipeClient toSend[1];
             toSend->port = portPick;
             toSend->type = 0;
 
-            strcpy(toSend->message, message);
-
+            // Generate message
+            strcpy(toSend->message, randstring());
             // write to pipeClient
             write(fdenvoi, toSend, sizeof(toSend));
             break;
@@ -161,16 +158,15 @@ void *calcul(void *pt)
                 wantSC = true;
                 for (int i = 0; i < nbServeurs; i++)
                 {
-                    int port = serveursPorts[i];
                     PipeClient toSend[1];
-                    toSend->port = port;
+                    toSend->port = serveursPorts[i];
                     toSend->type = 1;
                     toSend->horloge = horloge;
                     toSend->pid = pid;
                     toSend->RequestPort = port;
 
                     write(fdenvoi, toSend, sizeof(toSend));
-                    mylog(fdrpc, toSend->type, "REQUEST");
+                    mylog(fdrpc, toSend->type, "SEND REQUEST");
                 }
             }
             break;
@@ -178,6 +174,7 @@ void *calcul(void *pt)
             printf("Calcul : erreur pick option");
             break;
         }
+        sleep(1);
     }
     close(fdreception);
     close(fdenvoi);
@@ -189,4 +186,30 @@ void mylog(int fdrpc, int type, char *message)
     toSendTrace->type = type;
     strcpy(toSendTrace->message, message);
     write(fdrpc, toSendTrace, sizeof(toSendTrace));
+}
+
+char *randstring()
+{
+
+    size_t length = 10;
+    static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!";
+    char *randomString = NULL;
+
+    if (length)
+    {
+        randomString = malloc(sizeof(char) * (length + 1));
+
+        if (randomString)
+        {
+            for (int n = 0; n < length; n++)
+            {
+                int key = rand() % (int)(sizeof(charset) - 1);
+                randomString[n] = charset[key];
+            }
+
+            randomString[length] = '\0';
+        }
+    }
+
+    return randomString;
 }
